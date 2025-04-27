@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("DOCTOR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  clients   Client[] // Add this line to complete the relation
+}
+
+model Client {
+  id          String       @id @default(uuid())
+  firstName   String
+  lastName    String
+  dob         DateTime
+  gender      String
+  address     String?
+  phone       String?
+  email       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+  createdBy   User         @relation(fields: [userId], references: [id])
+  userId      String
+}
+
+model Program {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  client     Client   @relation(fields: [clientId], references: [id])
+  clientId   String
+  program    Program  @relation(fields: [programId], references: [id])
+  programId  String
+  enrolledAt DateTime @default(now())
+  status     String   @default("Active")
+  notes      String?
+
+  @@unique([clientId, programId])
+}
