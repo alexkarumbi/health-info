@@ -1,31 +1,33 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { toast } from '@/components/ui/use-toast'
 
 interface AuthFormProps {
-  type: 'login' | 'register';
+  type: 'login' | 'register'
 }
 
 export default function AuthForm({ type }: AuthFormProps) {
-  const router = useRouter();
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     name: '',
-  });
-  const [error, setError] = useState('');
+  })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setLoading(true)
 
     try {
       const response = await fetch(`/api/auth/${type}`, {
@@ -34,83 +36,72 @@ export default function AuthForm({ type }: AuthFormProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      });
+      })
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Something went wrong');
+        const data = await response.json()
+        throw new Error(data.error || 'Authentication failed')
       }
 
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      router.push('/dashboard')
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Authentication failed',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="p-4 bg-red-50 text-red-600 rounded">
-          {error}
-        </div>
-      )}
-      
+    <form onSubmit={handleSubmit} className="space-y-4">
       {type === 'register' && (
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
           <Input
             id="name"
             name="name"
-            type="text"
             value={formData.name}
             onChange={handleChange}
-            className="mt-1"
           />
         </div>
       )}
-      
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email address
-        </label>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           name="email"
           type="email"
-          autoComplete="email"
-          required
           value={formData.email}
           onChange={handleChange}
-          className="mt-1"
+          required
         />
       </div>
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"
           type="password"
-          autoComplete={type === 'login' ? 'current-password' : 'new-password'}
-          required
           value={formData.password}
           onChange={handleChange}
-          className="mt-1"
+          required
         />
       </div>
 
-      <div>
-        <Button
-          type="submit"
-          className="w-full"
-        >
-          {type === 'login' ? 'Sign in' : 'Register'}
-        </Button>
-      </div>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading
+          ? type === 'login'
+            ? 'Signing in...'
+            : 'Registering...'
+          : type === 'login'
+          ? 'Sign In'
+          : 'Register'}
+      </Button>
     </form>
-  );
+  )
 }
