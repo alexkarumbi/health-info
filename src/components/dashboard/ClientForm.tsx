@@ -1,12 +1,22 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
 
 export default function ClientForm() {
-  const router = useRouter();
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,17 +25,16 @@ export default function ClientForm() {
     address: '',
     phone: '',
     email: '',
-  });
-  const [error, setError] = useState('');
+  })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setLoading(true)
 
     try {
       const response = await fetch('/api/clients', {
@@ -34,14 +43,17 @@ export default function ClientForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      });
+      })
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create client');
+        throw new Error('Failed to create client')
       }
 
-      router.refresh();
+      toast({
+        title: 'Success',
+        description: 'Client created successfully',
+      })
+      router.refresh()
       setFormData({
         firstName: '',
         lastName: '',
@@ -50,35 +62,35 @@ export default function ClientForm() {
         address: '',
         phone: '',
         email: '',
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create client');
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="p-2 bg-red-50 text-red-600 rounded text-sm">
-          {error}
-        </div>
-      )}
-      
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">First Name</label>
+        <div className="space-y-2">
+          <Label htmlFor="firstName">First Name</Label>
           <Input
-            type="text"
+            id="firstName"
             name="firstName"
             value={formData.firstName}
             onChange={handleChange}
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Last Name</label>
+        <div className="space-y-2">
+          <Label htmlFor="lastName">Last Name</Label>
           <Input
-            type="text"
+            id="lastName"
             name="lastName"
             value={formData.lastName}
             onChange={handleChange}
@@ -86,65 +98,71 @@ export default function ClientForm() {
           />
         </div>
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+
+      <div className="space-y-2">
+        <Label htmlFor="dob">Date of Birth</Label>
         <Input
-          type="date"
+          id="dob"
           name="dob"
+          type="date"
           value={formData.dob}
           onChange={handleChange}
           required
         />
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Gender</label>
-        <select
-          name="gender"
+
+      <div className="space-y-2">
+        <Label htmlFor="gender">Gender</Label>
+        <Select
           value={formData.gender}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          onValueChange={(value) => setFormData({ ...formData, gender: value })}
         >
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
+          <SelectTrigger>
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Male">Male</SelectItem>
+            <SelectItem value="Female">Female</SelectItem>
+            <SelectItem value="Other">Other</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Address</label>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Address</Label>
         <Input
-          type="text"
+          id="address"
           name="address"
           value={formData.address}
           onChange={handleChange}
         />
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Phone</label>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone">Phone</Label>
         <Input
-          type="tel"
+          id="phone"
           name="phone"
+          type="tel"
           value={formData.phone}
           onChange={handleChange}
         />
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
         <Input
-          type="email"
+          id="email"
           name="email"
+          type="email"
           value={formData.email}
           onChange={handleChange}
         />
       </div>
-      
-      <Button type="submit">
-        Register Client
+
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? 'Creating...' : 'Register Client'}
       </Button>
     </form>
-  );
+  )
 }
